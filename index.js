@@ -25,18 +25,35 @@ app.post("/usuarios", (req, res) => {
     return res.status(400).json({ mensagem: "Nome e email são obrigatórios" });
   }
 
-  //definir o id dele
-  //adicionar ele a lista/banco de dados
-  //atualizar o ultimo id
-  //retornar pro front se deu sucesso (status 201)
+  const novoUsuario = {
+    nome: nome,
+    email: email,
+    id: ultimoId + 1,
+  };
+  usuarios.push(novoUsuario);
+  ultimoId += 1;
+
+  res.status(201).json(novoUsuario.id);
+});
+
+app.delete('/usuarios/:id', (req, res) => {
+  const id = req.params.id;
+  const idNumerico = parseInt(id);
+
+  if(isNaN(idNumerico)) {
+    return res.status(400).json({ mensagem: "ID inválido, precisa ser um número" });
+  }
+
+  let usuarioIndex = usuarios.findIndex(usuario => usuario.id === idNumerico);
+
+  if(usuarioIndex === -1) {
+    return res.status(404).json({ mensagem: "Usuário não encontrado" });
+  }
+
+  usuarios.splice(usuarioIndex, 1);
+  res.status(204).send();
+
+  
 });
 
 app.listen(3000);
-
-/**
- * crud em memória
- * criar uma rota para pegar todos os usuarios
- * criar  uma rota para cadastrar um novo usuario
- * criar uma rota para deletar um usuario
- * criar uma rota para atualizar um usuario
- */
