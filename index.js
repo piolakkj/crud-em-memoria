@@ -1,13 +1,16 @@
 import express from "express";
+import { imprime } from './middleware.js';
+
 const app = express();
 app.use(express.json());
+app.use(imprime);
 
 /**
  * crud em memória
  * criar uma rota para pegar todos os usuarios -> feito
  * criar  uma rota para cadastrar um novo usuario -> feito
- * criar uma rota para deletar um usuario
- * criar uma rota para atualizar um usuario
+ * criar uma rota para deletar um usuario -> feito
+ * criar uma rota para atualizar um usuario -> feito
  */
 
 let ultimoId = 1;
@@ -27,52 +30,39 @@ const usuario_comum = {
 let usuarios = [usuario_admin, usuario_comum];
 
 app.get("/usuarios", (req, res) => {
-    res.json(usuarios).status(200);
+    res.status(200).json(usuarios);
 });
 
 app.post("/usuarios", (req, res) => {
-
-  //pegar nome e email
-  //do body
     const {nome, email} = req.body;
-    console.log(nome);
-    console.log(email);
-    if (!nome||!email) {
-       return res.status(400).json({mensagem: "Nome e email são obrigatórios"})
+
+    if (!nome || !email) {
+       return res.status(400).json({mensagem: "Nome e email são obrigatórios"});
+    }
+
+    const novoUsuario = {
+        id: ultimoId++,
+        nome,
+        email
     };
 
-  //definir o id dele
-  //adicionar ele a lista/banco de dados
+    usuarios.push(novoUsuario);
 
-  //atualizar o ultimo id
-  //retornar pro front se deu sucesso (status 201)
-
-  const novoUsuario = {
-    id: ultimoId++,
-    nome: nome,
-    email: email
-  };
-
-  usuarios.push(novoUsuario);
-  ultimoId += 1;
-
-  res.status(201).json(novoUsuario.id);
+    res.status(201).json(novoUsuario.id);
 });
 
 app.delete("/usuarios/:id", (req, res) => {
-
-  const id  = req.params.id;
-  const idNumerico = parseInt(id);
+  const idNumerico = parseInt(req.params.id);
 
   if (isNaN(idNumerico)) {
     return res.status(400).json({mensagem: "ID inválido"});
   }
 
-  let usuarioIndex = usuarios.findIndex(usuario => usuario.id === idNumerico);
+  const usuarioIndex = usuarios.findIndex(usuario => usuario.id === idNumerico);
 
   if (usuarioIndex === -1) {
     return res.status(404).json({mensagem: "Usuário não encontrado"});
-  };
+  }
 
   usuarios.splice(usuarioIndex, 1);
   res.status(204).send();
@@ -87,14 +77,18 @@ app.patch("/usuarios/:id", (req, res) => {
 
   const usuario = usuarios.find((usuario) => usuario.id === id);
 
+  if (!usuario) {
+    return res.status(404).json({ mensagem: "Usuário não encontrado" });
+  }
+
   const { nome, email } = req.body;
 
-  if (!usuario && !email) {
-    return res.status(404).json({ mensagem: "nome e email são obrigatórios" });
-  };
+  if (!nome && !email) {
+    return res.status(400).json({ mensagem: "Nome e email são obrigatórios" });
+  }
 
   if (email) {
-    let email_existe = usuarios.findIndex(usuario => usuario.email === email);
+    const email_existe = usuarios.findIndex(usuario => usuario.email === email);
 
     if (email_existe !== -1) {
       return res.status(409).json({ mensagem: "Email já cadastrado" });
@@ -105,12 +99,6 @@ app.patch("/usuarios/:id", (req, res) => {
   }
 
   if (nome) {
-    let nome_existe = usuarios.findIndex(usuario => usuario.nome === nome);
-
-    if (nome_existe !== -1) {
-      return res.status(409).json({ mensagem: "Nome já cadastrado" });
-    }
-
     usuario.nome = nome;
     console.log("Nome atualizado:", usuario.nome);
   }
@@ -118,4 +106,6 @@ app.patch("/usuarios/:id", (req, res) => {
   res.status(200).json(usuario);
 });
 
-app.listen(3000)
+app.listen(3000 , () => {
+    console.log("Servidor rodando na porta 3000");
+});
